@@ -11,53 +11,149 @@
 #include <termios.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <thread>
+#include <atomic>
+#include <functional>
+#include <string>
+#include <chrono>
+#include <mutex>
+
+#include "interpreter/interpreter.cpp"
 
 using namespace std;
 
 
-int main(int argc, char **argv) {
-    const char *portName = "/dev/cu.usbserial-FT6E8SZC";
-    int serialPort = open(portName, O_RDWR | O_NOCTTY);
-    if (serialPort == -1) {
-        std::cerr << "Failed to open the serial port." << std::endl;
-        return 1;
-    }
-    struct termios options = {};
-    tcgetattr(serialPort, &options);
-    // Set the baud rate to 115200
-    cfsetispeed(&options, B115200);
-    cfsetospeed(&options, B115200);
-    // Apply the settings to the serial port
-    tcsetattr(serialPort, TCSANOW, &options);
-    // Write to the serial port
-    const char *message = "a";
-    ssize_t bytesWritten = write(serialPort, message, strlen(message));
-    if (bytesWritten == -1) {
-        std::cerr << "Error writing to the serial port." << std::endl;
-    } else {
-        std::cout << "Sent data: " << message << std::endl;
-    }
-    // Read from the serial port
-    for (int i = 0; i < 5; i++) {
-        char buffer[1024];
-        ssize_t bytesRead = read(serialPort, buffer, sizeof(buffer) - 1);
+// Function to continuously read data from the serial port
+void readSerialData(const int &serialPort, std::atomic<bool> &stopFlag, std::ofstream &outputFile) {
+    const int bufferSize = 50;
+    char buffer[bufferSize];
+    while (!stopFlag) {
+        ssize_t bytesRead = read(serialPort, buffer, bufferSize - 1);
         if (bytesRead > 0) {
-            buffer[bytesRead] = '\0';
-            std::cout << buffer << std::endl;
-            std::cout << "----------" << std::endl;
+            outputFile << buffer;
         } else if (bytesRead == -1) {
             std::cerr << "Error reading from the serial port." << std::endl;
         }
     }
-    cout << "done" << endl;
-    close(serialPort);
+}
+
+
+int main(int argc, char **argv) {
+    const char *portName = "/dev/cu.usbserial-FT6E8SZC";
+    std::ofstream outputFile("mylog.0", std::ios::out | std::ios::trunc);
+
+    // Create an atomic flag to signal the reading thread to stop
+    std::atomic<bool> stopFlag(false);
+
+
+    // Open the serial port
+    int serialPort = open(portName, O_RDWR | O_NOCTTY);
+    if (serialPort == -1) {
+        std::cerr << "Failed to open the serial port." << std::endl;
+        ::exit(0);
+    }
+
+    // Configure the serial port
+    struct termios options = {};
+    tcgetattr(serialPort, &options);
+    cfsetispeed(&options, B115200);
+    cfsetospeed(&options, B115200);
+    tcsetattr(serialPort, TCSANOW, &options);
+
+
+    // Create and start the reading thread
+    std::thread readingThread([&serialPort, &stopFlag, &outputFile] {
+        return readSerialData(serialPort, std::ref(stopFlag), outputFile);
+    });
+
+
+// Do your main program logic here
+// ...
+
+
+
+//    int serialPort = open(portName, O_RDWR | O_NOCTTY);
+//    if (serialPort == -1) {
+//        std::cerr << "Failed to open the serial port." << std::endl;
+//        return 1;
+//    }
+//    struct termios options = {};
+//    tcgetattr(serialPort, &options);
+//    // Set the baud rate to 115200
+//    cfsetispeed(&options, B115200);
+//    cfsetospeed(&options, B115200);
+//    // Apply the settings to the serial port
+//    tcsetattr(serialPort, TCSANOW, &options);
+////    // Write to the serial port
+////    const char *message = "a";
+////    ssize_t bytesWritten = write(serialPort, message, strlen(message));
+////    if (bytesWritten == -1) {
+////        std::cerr << "Error writing to the serial port." << std::endl;
+////    } else {
+////        std::cout << "Sent data: " << message << std::endl;
+////    }
+//    // Read from the serial port
+////    for (int i = 0; i < 5; i++) {
+//    std::ofstream outputFile;
+//    outputFile.open("mylog.0", std::ios::app); // Open file in append mode
+////    while (1) {
+//for (int j = 0; j < 100; j++) {
+//        char finalBuffer[32767];
+////        char tempBuffer[1024];
+////        ssize_t bytesRead;
+////        int lineCount = 0;
+////
+////        // Read and store lines until five lines are accumulated
+////        while (lineCount < 200) {
+////            bytesRead = read(serialPort, tempBuffer, sizeof(tempBuffer) - 1);
+////            if (bytesRead <= 0) {
+////                break;  // Error or end of input
+////            }
+//////            buffer[bytesRead] = '\0';  // Null-terminate the buffer
+////
+////            // Copy the line to the lines array
+//////            strncpy(lines[lineCount], buffer, sizeof(lines[lineCount]) - 1);
+//////            lines[lineCount][sizeof(lines[lineCount]) - 1] = '\0';  // Null-terminate the line
+////            strcat(finalBuffer, tempBuffer);
+////
+////            lineCount++;
+////        }
+//
+////        // Print the stored lines
+////        printf("Stored lines:\n");
+////        for (int i = 0; i < lineCount; i++) {
+////            printf("%s\n", lines[i]);
+////        }
+//
+//
+//
+//
+//        ssize_t bytesRead = read(serialPort, finalBuffer, sizeof(finalBuffer) - 1);
+//        if (bytesRead > 0) {
+//            outputFile << finalBuffer;
+////            vector<string> strings = interpret(finalBuffer);
+////            for (int i = 0; i < strings.size(); i++) {
+////                cout << strings[i];
+////            }
+//
+//        } else if (bytesRead == -1) {
+//            std::cerr << "Error reading from the serial port." << std::endl;
+//        }
+//    }
+//    outputFile.flush(); // Flush the buffer to write the data immediately
+//    outputFile.close(); // Close the file
+//    close(serialPort);
+
+
+
+
+
     int width = 790;
     int height = 700;
     int x_packet_offset = 0;  // X and Y offsets for the three packet groups
     int y_packet_offset = 250;
 
     Fl_Window *window = new Fl_Window(width, height, "IS Packet Interpreter"); // Create main window
-
 
 // -------------- CONTROLS GROUP --------------
     Fl_Group *group4 = new Fl_Group(15, 100, 760, 60, "CONTROLS");
@@ -71,28 +167,6 @@ int main(int argc, char **argv) {
     Fl_Round_Button *PC8 = new Fl_Round_Button(520, 105, 100, 50, "PC8");
     Fl_Round_Button *PC9 = new Fl_Round_Button(620, 105, 100, 50, "PC9");
     Fl_Round_Button *PC6 = new Fl_Round_Button(720, 105, 50, 50, "PC6");
-
-
-
-
-
-/*
-  Fl_PNG_Image *arrowImage = new Fl_PNG_Image("rightArrow.png"); // Load right/left arrow button images and scale
-  int desiredWidth1 = 110;
-  int desiredHeight1 = 90;
-  Fl_Image *scaledImage1 = arrowImage->copy(desiredWidth1, desiredHeight1);
-  Fl_Button *nextButton = new Fl_Button(170, 120, 135, 35);
-  nextButton->image(scaledImage1);
-
-  Fl_PNG_Image *leftArrowImage = new Fl_PNG_Image("leftArrow.png");
-  int desiredWidth2 = 110;
-  int desiredHeight2 = 90;
-  Fl_Image *scaledImage2 = leftArrowImage->copy(desiredWidth2, desiredHeight2);
-  Fl_Button *prevButton = new Fl_Button(20, 120, 135, 35);
-  prevButton->image(scaledImage2);
-*/
-
-
 
 // ------------ PACKET GROUPS --------------
     Fl_Group *group1 = new Fl_Group(x_packet_offset + 15, y_packet_offset, 200, 270, "PMT PACKET"); // PMT packet group
@@ -279,5 +353,24 @@ int main(int argc, char **argv) {
 
     window->end(); // Cleanup
     window->show(argc, argv);
+
+    while (1) {
+        outputFile.flush();
+        vector<string> strings = interpret("mylog.0");
+        if (!strings.empty()) {
+            truncate("mylog.0", 0);
+            for (int i = 0; i < strings.size(); i++) {
+                cout << strings[i] << endl;
+            }
+        }
+    }
+    stopFlag = true;
+    readingThread.join();
+    outputFile << '\0';
+    outputFile.flush();
+    outputFile.close();
+    close(serialPort);
+
+
     return Fl::run();
-} 
+}
