@@ -48,19 +48,19 @@ vector<string> interpret(const string& inputStr) {
     char sync[2];
     int packet = 0;
 
-    string erpaLabels[8] = {"SYNC", "erpaSEQ", "erpaADC", "cSWP", "mSWP", "TEMP1", "TEMP2", "ENDmon"};
+    string erpaLabels[8] = {"a", "b", "c", "d", "e", "f", "g", "h"};
     int erpaValues[8];
     int erpaIndex = 0;
     int erpaValid = 0;
 
-    string pmtLabels[3] = {"SYNC", "pmtSEQ", "pmtADC"};
+    string pmtLabels[3] = {"i", "j", "k"};
     int pmtValues[3];
     int pmtIndex = 0;
     int pmtValid = 0;
 
-    string hkLabels[13] = {"SYNC", "hkSEQ", "BUSvmon", "BUSimon", "2.5vmon",
-                           "3.3vmon", "5vmon", "5vref", "15v",
-                           "n3v3", "n5v", "MCU_TEMP", "MCU_VREF"};
+    string hkLabels[13] = {"l", "m", "n", "o", "p",
+                           "q", "r", "s", "t",
+                           "u", "v", "w", "x"};
     int hkValues[13];
     int hkIndex = 0;
     int hkValid = 0;
