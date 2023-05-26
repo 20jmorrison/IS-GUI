@@ -22,6 +22,14 @@
 
 using namespace std;
 
+// Function to write data to serial port, used for toggling GPIO's
+void writeSerialData(const int &serialPort, const std::string &data) {
+    ssize_t bytesWritten = write(serialPort, data.c_str(), data.length());
+    if (bytesWritten == -1) {
+        std::cerr << "Error writing to the serial port." << std::endl;
+    }
+}
+
 // Function to continuously read data from the serial port
 void readSerialData(const int &serialPort, std::atomic<bool> &stopFlag, std::ofstream &outputFile) {
     const int bufferSize = 64;
@@ -60,6 +68,7 @@ float hk_5vref = 0;
 float hk_15v = 0;
 float hk_n3v3 = 0;
 float hk_n5v = 0;
+string dataOut = "f";
 
 int main(int argc, char **argv) {
 //  const char *portName = "/dev/cu.usbserial-FT6E0L8J";
@@ -182,6 +191,15 @@ int main(int argc, char **argv) {
     Fl_Round_Button *PC8 = new Fl_Round_Button(520, 105, 100, 50, "PC8");
     Fl_Round_Button *PC9 = new Fl_Round_Button(620, 105, 100, 50, "PC9");
     Fl_Round_Button *PC6 = new Fl_Round_Button(720, 105, 50, 50, "PC6");
+
+    unsigned char valPB6 = PB6->value();
+    unsigned char valPB5 = PB5->value();
+    unsigned char valPC10 = PC10->value();
+    unsigned char valPC13 = PC13->value();
+    unsigned char valPC7 = PC7->value();
+    unsigned char valPC8 = PC8->value();
+    unsigned char valPC9 = PC9->value();
+    unsigned char valPC6 = PC6->value();
 
     /*
       Fl_PNG_Image *arrowImage = new Fl_PNG_Image("rightArrow.png"); // Load right/left arrow button images and scale
@@ -410,12 +428,46 @@ int main(int argc, char **argv) {
     window->show(argc, argv);
 
     while (1) {
+        // ----------- GPIO data ------------
+        if (PB6->value() != valPB6) {
+            valPB6 = PB6->value();
+            writeSerialData(serialPort, "a");
+        }
+        if (PB5->value() != valPB5) {
+            valPB5 = PB5->value();
+            writeSerialData(serialPort, "b");
+        }
+        if (PC10->value() != valPC10) {
+            valPC10 = PC10->value();
+            writeSerialData(serialPort, "c");
+        }
+        if (PC13->value() != valPC13) {
+            valPC13 = PC13->value();
+            writeSerialData(serialPort, "d");
+        }
+        if (PC7->value() != valPC7) {
+            valPC7 = PC7->value();
+            writeSerialData(serialPort, "e");
+        }
+        if (PC8->value() != valPC8) {
+            valPC8 = PC8->value();
+            writeSerialData(serialPort, "f");
+        }
+        if (PC9->value() != valPC9) {
+            valPC9 = PC9->value();
+            writeSerialData(serialPort, "g");
+        }
+        if (PC6->value() != valPC6) {
+            valPC6 = PC6->value();
+            writeSerialData(serialPort, "h");
+        }
+
+        // ------------ PACKET DATA ------------
         outputFile.flush();
         vector<string> strings = interpret("mylog.0");
         if (!strings.empty()) {
             truncate("mylog.0", 0);
             for (int i = 0; i < strings.size(); i++) {
-//        cout << strings[i] << endl;
                 char letter = strings[i][0];
                 strings[i] = strings[i].substr(2);
                 switch (letter) {
