@@ -22,12 +22,31 @@
 
 using namespace std;
 
+// Function to write data to serial port, used for toggling GPIO's
+void writeSerialData(const int &serialPort, std::atomic<bool> &stopFlag, const std::string &data)
+{
+  while (!stopFlag)
+  {
+    ssize_t bytesWritten = write(serialPort, data.c_str(), data.length());
+    if (bytesWritten > 0)
+    {
+      // Data successfully written to the serial port
+      break; // Exit the loop
+    }
+    else if (bytesWritten == -1)
+    {
+      std::cerr << "Error writing to the serial port." << std::endl;
+      break; // Exit the loop
+    }
+  }
+}
+
 // Function to continuously read data from the serial port
-void readSerialData(const int &serialPort, std::atomic<bool> &stopFlag, std::ofstream &outputFile)
+void readSerialData(const int &serialPort, std::atomic<bool> &writeStopFlag, std::ofstream &outputFile)
 {
   const int bufferSize = 50;
   char buffer[bufferSize];
-  while (!stopFlag)
+  while (!writeStopFlag)
   {
     ssize_t bytesRead = read(serialPort, buffer, bufferSize - 1);
     if (bytesRead > 0)
@@ -64,6 +83,7 @@ float hk_5vref = 0;
 float hk_15v = 0;
 float hk_n3v3 = 0;
 float hk_n5v = 0;
+string dataOut = "f";
 
 int main(int argc, char **argv)
 {
@@ -72,6 +92,8 @@ int main(int argc, char **argv)
 
   // Create an atomic flag to signal the reading thread to stop
   std::atomic<bool> stopFlag(false);
+  std::atomic<bool> writeStopFlag(false);
+
 
   // Open the serial port
   int serialPort = open(portName, O_RDWR | O_NOCTTY);
@@ -415,6 +437,15 @@ int main(int argc, char **argv)
 
   while (1)
   {
+    // ----------- GPIO data ------------
+    if (PC8->value())
+    {
+      // turn on PC8
+      writeSerialData(serialPort, std::ref(writeStopFlag), "f"); 
+    }
+
+
+    // ------------ PACKET DATA ------------
     outputFile.flush();
     vector<string> strings = interpret("mylog.0");
     if (!strings.empty())
@@ -426,7 +457,7 @@ int main(int argc, char **argv)
         char letter = strings[i][0];
         switch (letter)
         {
-        case 'a':
+        case 'z':
         {
           snprintf(buffer, sizeof(buffer), "%s", strings[i].c_str());
           ERPAsync->value(buffer);
@@ -576,6 +607,7 @@ int main(int argc, char **argv)
     //
   }
   stopFlag = true;
+  writeStopFlag = true;
   readingThread.join();
   outputFile << '\0';
   outputFile.flush();

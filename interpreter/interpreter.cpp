@@ -94,9 +94,9 @@ vector<string> interpret(const string& inputStr) {
                 switch (erpaIndex) {
                     case 0:
                         /* SEQ Bytes; should be 0xAAAA */
-//                        sprintf(result, "%s:0x%X", erpaLabels[erpaIndex].c_str(), erpaValues[erpaIndex]);
-//                        strings.push_back(result);
-//                        arrCounter++;
+                        sprintf(result, "%s:0x%X", erpaLabels[erpaIndex].c_str(), erpaValues[erpaIndex]);
+                        strings.push_back(result);
+                        arrCounter++;
                         break;
                     case 1:
                         /* SYNC Bytes; 0-65535 */
@@ -156,9 +156,9 @@ vector<string> interpret(const string& inputStr) {
                 switch (pmtIndex) {
                     case 0:
                         /* SEQ Bytes; should be 0xBBBB */
-//                        sprintf(result, "%s:0x%X", pmtLabels[pmtIndex].c_str(), pmtValues[pmtIndex]);
-//                        strings.push_back(result);
-//                        arrCounter++;
+                        sprintf(result, "%s:0x%X", pmtLabels[pmtIndex].c_str(), pmtValues[pmtIndex]);
+                        strings.push_back(result);
+                        arrCounter++;
                         break;
                     case 1:
                         /* SYNC Bytes; 0-65535 */
@@ -184,9 +184,9 @@ vector<string> interpret(const string& inputStr) {
 
                     case 0:
                         /* SEQ Bytes; should be 0xCCCC */
-//                        sprintf(result, "%s:0x%X ", hkLabels[hkIndex].c_str(), hkValues[hkIndex]);
-//                        strings.push_back(result);
-//                        arrCounter++;
+                        sprintf(result, "%s:0x%X ", hkLabels[hkIndex].c_str(), hkValues[hkIndex]);
+                        strings.push_back(result);
+                        arrCounter++;
                         break;
                     case 1:
                         /* SYNC Bytes; 0-65535 */
